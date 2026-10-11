@@ -1,0 +1,57 @@
+﻿@using ePizzaHub.UI.Models.ApiModels.Response;
+@model IEnumerable<ItemResponseModel>
+@{
+ViewData["Title"] = "Dashboard";
+    Layout = "_FullSizeLayout";
+}
+
+<div style="background-color: skyblue">
+    <div class="container">
+        <div class="row pt-5">
+            <div class="col-sm-8">
+                <h1 class="display-4">Welcome to ePizzaHub Application</h1>
+                <p class="pb-4">
+                    Delicious Pizza Delivereds.
+                </p>
+               
+                <p>
+                    <a href="#heading" class="btn btn-success">ORDER ONLINE NOW</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container pt-3">
+    <h1 class="mb-3">Pizza, Beverages</h1>
+    <div class="row">
+        @foreach(var item in Model)
+        {
+            <div class="col-sm-4 mb-3">
+                <div class="card">
+                    <img src="@item.ImageUrl" alt="!error" class="card-img-top"/>
+                    <div class="card-body">
+                        <h5>@item.Name
+                            <span class="float-end">@item.UnitPrice</span>
+                        </h5>
+                        <p class="card-text">@item.Description</p>
+                    </div>
+                    <div>
+                        <span>Size: regular</span>
+                        <span class="float-end">
+                            @* Here we pass 1 because generally when user click on add to cart button, we will add 1 quantity of that item in the cart. If user want to add more quantity, then they can update the quantity in the cart page. *@
+                            <a class="btn btn-success" onclick="AddItemToCart(@item.Id, 1)" href="javascript:void(0);">Add to Cart</a>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@* we need to load the Cart.js file here because we need to update the cart counter in the header when user click on add to cart button. 
+    Whenever the Cart.js will be invoked, it'll invoke the method indide Cart.js, internally CartController part and then it call the API and get the output.
+*@
+@section Scripts{
+    <script src="~/js/Cart.js" asp-append-version="true"></script>
+}

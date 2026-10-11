@@ -1,0 +1,25 @@
+﻿@using ePizzaHub.UI.Models.ViewModels
+@model ReceiptViewModel
+
+<h1>Receipt</h1>
+<hr />
+
+<div class="card" style="max-width: 520px;">
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-5">Order Id</dt>
+            <dd class="col-sm-7">@Model.TransactionId</dd>
+
+            <dt class="col-sm-5">Total</dt>
+            <dd class="col-sm-7">@Model.Total.ToString("N2")</dd>
+
+            <dt class="col-sm-5">Tax</dt>
+            <dd class="col-sm-7">@Model.Tax.ToString("N2")</dd>
+
+            <dt class="col-sm-5">Grand Total</dt>
+            <dd class="col-sm-7">@Model.Currency @Model.GrandTotal.ToString("N2")</dd>
+        </dl>
+    </div>
+</div>
+
+<a asp-controller="Dashboard" asp-action="Index" class="btn btn-primary mt-3">Continue shopping</a>

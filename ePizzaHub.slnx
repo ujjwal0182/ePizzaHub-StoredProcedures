@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="ePizzaHub.API/ePizzaHub.API.csproj" />
+  <Project Path="ePizzaHub.Core/ePizzaHub.Core.csproj" />
+  <Project Path="ePizzaHub.Models/ePizzaHub.Models.csproj" />
+  <Project Path="ePizzaHub.Repositories/ePizzaHub.Repositories.csproj" />
+  <Project Path="ePizzaHub.Tests/ePizzaHub.Tests.csproj" />
+  <Project Path="ePizzaHub.UI/ePizzaHub.UI.csproj" />
+</Solution>

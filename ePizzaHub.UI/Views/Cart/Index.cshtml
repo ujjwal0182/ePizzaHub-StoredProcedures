@@ -1,0 +1,111 @@
+﻿@* Model is tightly coupled *@
+
+@using ePizzaHub.UI.Models.ViewModels
+@model GetCartResponseModel //This is GetCartResponseViewModel
+
+@{
+    ViewData["Title"] = "Cart Details";
+}
+
+<div>
+    @if (Model != null && Model.Items != null)
+    {
+        <div class="row">
+            <div class="col-sm-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Total Items = @Model.Items.Count()</h3>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Details</th>
+                                    <th>Price</th>
+                                    <th>Quanitity</th>
+                                    <th>Total</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model.Items)
+                                {
+                                    <tr>
+                                        <td>
+                                            <img src="@item.ImageUrl" style="width:50px; height:50px" />
+                                            <div>@item.ItemName</div>
+                                        </td>
+                                        <td>
+                                            @item.UnitPrice
+                                        </td>
+                                        <td>
+                                            <div class="def-number-input number-input safari_only mb-0 w-100">
+                                                <div class="input-group mb-3">
+                                                    <div class="input-group-prepend">
+                                                        <button onclick="updateQuantity('@item.ItemId','@item.Quantity',@item.Quantity -1)" class="btn btn-outline-secondary" type="button">-</button>
+                                                    </div>
+                                                    <input class="form-control sm-control" size="2" min="0" name="quantity" value="@item.Quantity" readonly />
+                                                    <div class="input-group-append">
+                                                        <button onclick="updateQuantity('@item.ItemId','@item.Quantity',@item.Quantity +1)" class="btn btn-outline-secondary" type="button">+</button>
+                                                    </div>
+                                                </div>
+                                        </td>
+                                        <td>
+                                            @item.ItemTotal
+                                        </td>
+                                        <td>
+                                            <a href="javascript:void(0);" onclick="deleteItem('@item.ItemId')" class="btn btn-danger">Remove</a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+            </div>
+            <div class="col-sm-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Cart Summary</h3>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-bordered">
+                            <tr>
+                                <td>Total</td>
+                                <td>@Model.Total</td>
+                            </tr>
+                            <tr>
+                                <td>Tax</td>
+                                <td>@Model.Tax</td>
+                            </tr>
+                            <tr>
+                                <td>Grand Total (Inclusive of Taxes)</td>
+                                <td>@Model.GrandTotal</td>
+                            </tr>
+                        </table>
+
+                        @if (CurrentUser == null)
+                        {
+                            <a asp-action="Login" asp-controller="Login" class="btn btn-success">Login</a>
+                        }
+                        else
+                        {
+                            <a asp-action="Checkout" asp-controller="Cart" class="btn btn-success">Checkout</a>
+                        }
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div>
+            <h3>No Items were added in Cart,please add some</h3>
+        </div>
+    }
+</div>
+@section Scripts {
+    <script src="~/js/cart.js" asp-append-version="true"></script>
+}
