@@ -1,17 +1,20 @@
-using System.Text;
-using ePizzaHub.Core.Contracts;
 using ePizzaHub.API.Middleware;
 using ePizzaHub.API.Services;
 using ePizzaHub.API.Settings;
 using ePizzaHub.Core.Concrete;
+using ePizzaHub.Core.Contracts;
+using ePizzaHub.Core.Settings;
 using ePizzaHub.Repositories.Concrete;
 using ePizzaHub.Repositories.Contracts;
 using ePizzaHub.Repositories.Infrastructure;
-using ePizzaHub.Core.Settings;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using OllamaSharp;
 using Serilog;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,6 +33,7 @@ if (string.IsNullOrWhiteSpace(jwt.Secret) || jwt.Secret.Length < 32)
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
 builder.Services.Configure<PricingSettings>(builder.Configuration.GetSection("Pricing"));
 builder.Services.Configure<RazorpaySettings>(builder.Configuration.GetSection("Razorpay"));
+builder.Services.Configure<AssistantSettings>(builder.Configuration.GetSection("Assistant"));
 
 builder.Services.AddHttpClient<IPaymentGateway, RazorpayGateway>();
 
@@ -74,6 +78,15 @@ builder.Services.AddAuthorization();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
+builder.Services.AddSingleton<IChatClient>(sp =>
+{
+    var s = sp.GetRequiredService<IOptions<AssistantSettings>>().Value;
+    var http = new HttpClient { BaseAddress = new Uri(s.OllamaUrl), Timeout = TimeSpan.FromMinutes(5) };
+    return new ChatClientBuilder(new OllamaApiClient(http, s.Model))
+        .UseFunctionInvocation(null, c => c.MaximumIterationsPerRequest = s.MaxIterations)
+        .Build();
+});
+
 // Data access
 builder.Services.AddSingleton<IDbConnectionFactory>(new SqlConnectionFactory(connectionString));
 builder.Services.AddScoped<IItemRepository, ItemRepository>();
@@ -90,6 +103,7 @@ builder.Services.AddScoped<ITokenGeneratorService, TokenGeneratorService>();
 builder.Services.AddScoped<ICartService, CartService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
+builder.Services.AddScoped<IAssistantService, AssistantService>();
 
 var app = builder.Build();
 
