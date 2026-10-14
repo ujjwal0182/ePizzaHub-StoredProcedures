@@ -12,6 +12,8 @@ using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using System.Security.Claims;
+using System.Threading.RateLimiting;
 using OllamaSharp;
 using Serilog;
 using System.Text;
@@ -87,6 +89,21 @@ builder.Services.AddSingleton<IChatClient>(sp =>
         .Build();
 });
 
+builder.Services.AddRateLimiter(o =>
+{
+    o.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    o.AddPolicy("assistant", ctx =>
+    {
+        var key = ctx.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                  ?? ctx.Connection.RemoteIpAddress?.ToString() ?? "anon";
+        return RateLimitPartition.GetConcurrencyLimiter(key, _ => new ConcurrencyLimiterOptions
+        {
+            PermitLimit = 1,
+            QueueLimit = 0
+        });
+    });
+});
+
 // Data access
 builder.Services.AddSingleton<IDbConnectionFactory>(new SqlConnectionFactory(connectionString));
 builder.Services.AddScoped<IItemRepository, ItemRepository>();
@@ -118,6 +135,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseAuthentication();     // pehle authentication
+app.UseRateLimiter();
 app.UseAuthorization();      // phir authorization
 app.MapControllers();
 app.Run();

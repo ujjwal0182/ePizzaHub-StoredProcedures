@@ -2,6 +2,7 @@
 using ePizzaHub.Models.ApiModels.Request;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace ePizzaHub.API.Controllers
 {
@@ -17,6 +18,7 @@ namespace ePizzaHub.API.Controllers
         }
 
         [HttpPost("chat")]
+        [EnableRateLimiting("assistant")]
         public async Task<IActionResult> Chat([FromBody] ChatRequest req, CancellationToken ct)
         {
             if (string.IsNullOrWhiteSpace(req.Message) || req.Message.Length > 500)

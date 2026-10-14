@@ -172,3 +172,73 @@ Stored procedure behavior is verified with the SQL scripts in `Database/tests/`.
 
 ## Screenshots
 _Add screenshots here: dashboard, cart, Razorpay checkout, receipt, Swagger._
+
+![Registration Page](image.png)
+![Login Page](image-1.png)
+![Dashboard](image-2.png)
+![Cart Page](image-3.png)
+![Checkout Page](image-4.png)
+![Razor Page](image-5.png)
+![Razor Page](image-6.png)
+
+
+## AI assistant (MCP + agentic AI, runs locally)
+
+A chat assistant inside the MVC UI. A logged-in user can ask for the menu, add or remove pizzas in the cart and see their orders. The language model runs locally through Ollama, and it reaches the application only through an MCP (Model Context Protocol) server that exposes a small set of tools.
+
+# How it works
+Browser (chat widget, JWT cookie + CSRF token)
+  |  POST /Assistant/Chat
+ePizzaHub.UI  (AssistantController: reads the CartId cookie, calls the API with the user's JWT)
+  |  POST /api/Assistant/chat   [Authorize, rate limited]
+ePizzaHub.API (AssistantService = agent loop + MCP client)
+  |        \__ LLM (Ollama, qwen2.5:7b) decides which tool to call
+  |  MCP over Streamable HTTP  (headers: Authorization, X-Cart-Id)
+ePizzaHub.Mcp (MCP server, /mcp, 5 tools)
+  |  HTTP with the same JWT
+ePizzaHub.API (existing controllers: validation, ownership checks, services)
+  |
+SQL Server (stored procedures)
+
+The agent loop is the function-invocation middleware of Microsoft.Extensions.AI: the model asks for a tool, the tool runs through MCP, the result goes back to the model, and this repeats until the model gives a final answer (maximum 5 iterations).
+
+# Tools exposed by the MCP server
+# Tool	Type	Notes
+search_menu	read-only	Lists menu items, optional text filter
+get_cart	read-only	Cart lines, tax and grand total
+get_my_orders	read-only	Orders of the logged-in user (identity from the JWT)
+add_to_cart	write	Quantity 1-10 enforced on the server
+remove_from_cart	write	Only removes from the caller's own cart
+
+There is deliberately no checkout or payment tool. Checkout stays a human action in the UI (Razorpay flow).
+
+Security decisions for the assistant
+Identity never comes from the model. The user's JWT and the cart id travel as transport headers (Authorization, X-Cart-Id). No tool has a user-id or cart-id argument, so the model cannot ask for another user's data.
+Least privilege. The worst a misled model can do is change the caller's own cart. It cannot place orders, pay or change prices.
+The MCP server calls the existing API, not the database. Validation, ownership checks and stored procedures are not bypassed.
+Server-side limits, not prompt rules: quantity 1-10, message length 500, one running chat per user (concurrency limiter, HTTP 429).
+Prompt injection: the system prompt says tool output is data, not instructions, but the real protection is the tool design above. Tested with direct attacks and with an indirect attack (instructions hidden in a menu description).
+Output is untrusted: the chat widget renders replies with textContent (no XSS). The chat endpoint requires login and an anti-forgery token.
+Run it
+Install Ollama and pull the model: ollama pull qwen2.5:7b
+Settings (ePizzaHub.API/appsettings.json):
+json
+   "Assistant": { "OllamaUrl": "http://localhost:11434", "Model": "qwen2.5:7b",
+                  "McpUrl": "http://localhost:5200/mcp", "MaxIterations": 5 }
+
+and in ePizzaHub.Mcp/appsettings.json: "EPizzaAPI": { "Url": "https://localhost:7218/api/" } 3. Start in this order: Ollama, ePizzaHub.API, then the MCP server dotnet run --project ePizzaHub.Mcp --urls http://localhost:5200, then ePizzaHub.UI. 4. Log in and use the chat button at the bottom right.
+
+To inspect the tools without the UI: npx @modelcontextprotocol/inspector (Streamable HTTP, http://localhost:5200/mcp).
+
+Known limitations of the assistant
+On a CPU-only machine a reply takes about 1 to 1.5 minutes (the UI shows a timer). A GPU, a smaller model or a hosted model is faster.
+Each message is independent (no conversation memory yet).
+Replies are not streamed.
+Small local models can pick the wrong tool or ignore instructions, which is why the limits live in code.
+
+## Screenshots
+![Chat button](image-7.png)
+![Chat bot](image-8.png)
+![Chat Response](image-9.png)
+![Task to add items in Cart](image-10.png)
+![Cart details](image-11.png)

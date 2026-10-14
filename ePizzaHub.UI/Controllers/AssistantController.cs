@@ -44,6 +44,8 @@ namespace ePizzaHub.UI.Controllers
 
             if (res.StatusCode == HttpStatusCode.Unauthorized)
                 return Unauthorized(new { reply = "Session expire ho gaya, dobara login karo." });
+            if (res.StatusCode == HttpStatusCode.TooManyRequests)
+                return StatusCode(429, new { reply = "Pichla sawal abhi chal raha hai, thoda ruko." });
             if (!res.IsSuccessStatusCode)
                 return StatusCode(502, new { reply = "Assistant abhi available nahi hai. Thodi der baad try karo." });
 
